@@ -4,16 +4,20 @@ load_dotenv()
 from typing import Optional
 from fastapi import FastAPI
 from fastapi.param_functions import Depends
+from redis import Redis
+import os
 
 import slack
 from mail import AdminClient
-
+from exceptions import *
 app = FastAPI(
     title="C4K-Slack-Slash-Command-Intergration"
 )
 app.include_router(slack.router)
 
 MailApi = AdminClient()
+
+db = Redis(host="localhost", port=6379, db=0)
 
 def gen_slack_message(text: str):
     return {"blocks":[{"type":"section","text":{"type":"mrkdwn","text":text}}]}
@@ -30,5 +34,35 @@ async def route_root():
 @app.post("/createmail")
 async def slash_createmail(slash: slack.SlashCommand = Depends()):
     print(slash)
-    text = "hello world"
-    return gen_slack_message(text)
+    try:
+        if db.get(slash.user_id):
+            raise AlreadyExsistingUser(slash.user_id, db.get(slash.user_id).decode())
+        data = await MailApi.post_new_user(slash.text)
+        if data:
+            text = f"""
+성공적으로 이메일 발급에 성공하였습니다!
+아래 인증정보를 통해 웹 메일에 로그인 하실 수 있습니다.
+로그인 후, `설정->암호` 에서 비밀번호를 변경하실 수 있습니다.
+
+https://{os.environ.get("mail_server_domain")}
+```
+ID: {data.get("email")}
+PW: {data.get("password")}
+```
+            """
+            db.set(slash.user_id,data.get("email"))
+            return gen_slack_message(text)
+    except AlreadyExsistingUser as e:
+        print(e.text)
+        return gen_slack_message(e.text)
+    except AlreadyExsistingEmail as e:
+        print(e.text)
+        return gen_slack_message(e.text)
+    except InvaildInput as e:
+        print(e.text)
+        return gen_slack_message(e.text)
+    except InvaildDomain as e:
+        print(e.text)
+        return gen_slack_message(e.text)
+    except Exception as e:
+        raise e
