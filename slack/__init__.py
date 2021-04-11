@@ -4,11 +4,9 @@ from time import time
 from urllib.parse import parse_qsl
 from typing import Optional
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
-from pkg_resources import get_distribution
 from pydantic import BaseModel, BaseSettings, SecretStr, ValidationError
 
 __all__ = ["SlashCommand", "router"]
-__version__ = get_distribution("fastapi-slack").version
 
 router = APIRouter()
 
@@ -39,12 +37,6 @@ def with_valid_timestamp(x_slack_request_timestamp: int = Header(...)) -> int:
 
 
 async def with_body(request: Request) -> bytes:
-    """Return request body.
-
-    Per design, a route cannot depend on a form field and consume body because
-    dependencies resolution consumes body.
-    Therefore, this is not using `fastapi.Form` to extract form data parameters.
-    """
     return await request.body()
 
 
@@ -53,7 +45,6 @@ def with_form_data(body: bytes = Depends(with_body)) -> dict:
 
 
 def check_signature(secret: str, timestamp: int, signature: str, body: bytes) -> bool:
-    """Return True if signature is valid and False if not."""
     signature_message = f"v0:{timestamp}:{body.decode()}"
     local_hash = HMAC(secret.encode(), signature_message.encode(), sha256).hexdigest()
     local_signature = f"v0={local_hash}"
