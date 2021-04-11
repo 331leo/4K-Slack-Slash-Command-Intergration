@@ -6,7 +6,7 @@ class InvaildDomain(Exception):
 
 class InvaildInput(Exception):
     def __init__(self, input):
-        self.text = f"`{input}` 은 올바르지 않은 입력입니다."
+        self.text = f"`{input}` 은 올바르지 않은 이메일입니다."
     def __str__(self):
         return self.text
 
@@ -17,7 +17,7 @@ class AlreadyExsistingEmail(Exception):
         return self.text
 
 class AlreadyExsistingUser(Exception):
-    def __init__(self, userid):
-        self.text = f"<@{userid}> 님은 이미 등록된 이메일 주소가 있습니다."
+    def __init__(self, userid, email):
+        self.text = f"<@{userid}> 님은 이미 등록된 이메일 주소({email})가 있습니다."
     def __str__(self):
         return self.text
