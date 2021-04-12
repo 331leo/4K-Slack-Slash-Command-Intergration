@@ -73,6 +73,7 @@ class AdminClient:
                 data=payload,
                 auth=self.auth
             ) as resp:
+                print(await resp.text())
                 if await resp.text() == "Invalid email address.":
                         raise InvaildInput(email)
                 assert resp.status == 200, "post_new_user, Response Code is not 200. Current Response code is {}".format(resp.status)
@@ -87,5 +88,6 @@ class AdminClient:
                 data=payload,
                 auth=self.auth
             ) as resp:
+                print(await resp.text())
                 assert resp.status == 200, "reset_user_password, Response Code is not 200. Current Response code is {}".format(resp.status)
                 return payload

@@ -23,7 +23,9 @@ ID: {email}
 PW: {password}
 ```
 
-다른 메일 클라이언트를 사용하시려면 아래 설정을 입력하세요.
+"""
+external_mail_app_info="""
+다른 메일 클라이언트에서 사용하시려면 아래 설정을 입력하세요.
 ```
 받는 메일 서버(IMAP): {domain} (SSL(TLS), 기본포트 993)
 보내는 메일 서버(SMTP): {domain} (STARTTLS, 기본포트 587)
@@ -31,6 +33,7 @@ Username: 이메일 주소 전체
 Password: 비밀번호
 ```
 """
+
 
 def gen_slack_message(text: str):
     return {"blocks":[{"type":"section","text":{"type":"mrkdwn","text":text}}]}
@@ -55,6 +58,7 @@ async def slash_createmail(slash: slack.SlashCommand = Depends()):
                 email=data.get("email"),
                 password=data.get("password")
                 )
+            text+=external_mail_app_info.format(domain=os.environ.get("mail_server_domain"))
             db.set(slash.user_id,data.get("email"))
             return gen_slack_message(text)
     except Exception as e:
@@ -70,7 +74,7 @@ async def slash_resetpassword(slash: slack.SlashCommand = Depends()):
     try:
         if not db.get(slash.user_id):
             raise NotExistingUser
-        data = await MailApi.reset_user_password(db.get(slash.user_id))
+        data = await MailApi.reset_user_password(db.get(slash.user_id).decode())
         text = base_return_text.format(
             op="비밀번호 초기화",
             domain=os.environ.get("mail_server_domain"),
@@ -84,3 +88,8 @@ async def slash_resetpassword(slash: slack.SlashCommand = Depends()):
             return gen_slack_message(e.text)
         except:
             raise e
+
+@router.post("/externalmail")
+async def slash_externalmail(slash: slack.SlashCommand = Depends()):
+    print(slash)
+    return gen_slack_message(external_mail_app_info.format(domain=os.environ.get("mail_server_domain")))
