@@ -5,5 +5,6 @@ __all__ = [
     "InvaildInput",
     "AlreadyExistingEmail",
     "AlreadyExistingUser",
-    "BlankInputReceived"
+    "BlankInputReceived",
+    "NotExistingUser"
 ]

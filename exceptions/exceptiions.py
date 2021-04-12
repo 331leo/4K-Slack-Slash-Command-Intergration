@@ -27,3 +27,9 @@ class BlankInputReceived(Exception):
         self.text = "비어있는 입력은 허용되지 않습니다. 이메일 주소 형태로 입력해 주세요."
     def __str__(self):
         return self.text
+
+class NotExistingUser(Exception):
+    def __init__(self):
+        self.text = "이 명령어를 사용하려면 이메일 주소가 있어야 합니다. `/createmail`명령어로 이메일을 생성하세요."
+    def __str__(self):
+        return self.text
