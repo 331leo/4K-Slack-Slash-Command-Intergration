@@ -13,6 +13,13 @@ class AdminClient:
         self.domain_cache = list()
         self.auth=aiohttp.BasicAuth(os.environ.get("mail_admin_api_id"),os.environ.get("mail_admin_api_password"))
         pass
+    
+    @staticmethod
+    def generate_password(length: int):
+        generated_password = ""
+        for _ in range(length):
+            generated_password += random.choice(list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!"))
+        return generated_password
 
     async def get_all_users(self):
         async with aiohttp.ClientSession() as session:
@@ -59,13 +66,7 @@ class AdminClient:
         if domain not in self.domain_cache:
             raise InvaildDomain(domain)
         
-
-        generated_password = ""
-        for _ in range(9):
-            generated_password += random.choice(list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"))
-
-        
-        payload = {"email":email, "password":generated_password}
+        payload = {"email":email, "password":self.generate_password(9)}
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 MAIL_ADMIN_BASE_URL + "/mail/users/add",
@@ -76,4 +77,15 @@ class AdminClient:
                         raise InvaildInput(email)
                 assert resp.status == 200, "post_new_user, Response Code is not 200. Current Response code is {}".format(resp.status)
                 self.users_cache.append(email)
+                return payload
+
+    async def reset_user_password(self, email):
+        payload = {"email":email, "password":self.generate_password(9)}
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                MAIL_ADMIN_BASE_URL + "/mail/users/password",
+                data=payload,
+                auth=self.auth
+            ) as resp:
+                assert resp.status == 200, "reset_user_password, Response Code is not 200. Current Response code is {}".format(resp.status)
                 return payload
